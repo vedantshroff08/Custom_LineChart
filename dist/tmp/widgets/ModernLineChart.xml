@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget xmlns="http://www.mendix.com/widget/1.0/" id="mendix.modernlinechart.ModernLineChart"
+    pluginWidget="true" needsEntityContext="false" supportedPlatform="Web">
+
+    <name>Modern Line Chart</name>
+    <description>Modern customizable line chart</description>
+
+    <properties>
+
+        <!-- DATA -->
+
+        <property key="dataSource" type="datasource" isList="true" required="true">
+            <caption>Data Source</caption>
+            <category>Data</category>
+            <description>Select list datasource</description>
+        </property>
+
+        <property key="xAttribute" type="attribute" dataSource="dataSource" required="true">
+            <caption>X Axis</caption>
+            <category>Data</category>
+            <description>X Axis attribute</description>
+
+            <attributeTypes>
+                <attributeType name="String" />
+            </attributeTypes>
+
+        </property>
+
+        <property key="yAttribute" type="attribute" dataSource="dataSource" required="true">
+            <caption>Y Axis</caption>
+            <category>Data</category>
+            <description>Y Axis attribute</description>
+
+            <attributeTypes>
+                <attributeType name="Integer" />
+                <attributeType name="Long" />
+                <attributeType name="Decimal" />
+            </attributeTypes>
+
+        </property>
+
+        <property key="jsonAttr" type="attribute" dataSource="dataSource" required="false">
+            <caption>Json</caption>
+            <category>Data</category>
+            <description>Optional JSON attribute with the detail record(s) shown in the drill-down modal when a point is clicked. Leave unset to disable the modal.</description>
+            <attributeTypes>
+                <attributeType name="String" />
+            </attributeTypes>
+        </property>
+
+        <!-- APPEARANCE -->
+
+        <property key="chartTitle" type="string">
+            <caption>Chart Title</caption>
+            <category>Appearance</category>
+            <description>Title displayed above the chart.</description>
+        </property>
+
+        <property key="xAxisLabel" type="string">
+            <caption>X-Axis Label</caption>
+            <category>Appearance</category>
+            <description>Label displayed below the X-axis.</description>
+        </property>
+
+        <property key="yAxisLabel" type="string">
+            <caption>Y-Axis Label</caption>
+            <category>Appearance</category>
+            <description>Label displayed beside the Y-axis.</description>
+        </property>
+
+        <property key="height" type="integer" defaultValue="380">
+            <caption>Chart Height (px)</caption>
+            <category>Appearance</category>
+            <description>Height of the chart in pixels.</description>
+        </property>
+
+        <property key="fillArea" type="boolean" defaultValue="true">
+            <caption>Show Filled Area</caption>
+            <category>Appearance</category>
+            <description>Fill the area below the line.</description>
+        </property>
+
+        <property key="showPoints" type="boolean" defaultValue="true">
+            <caption>Show Data Points</caption>
+            <category>Appearance</category>
+            <description>Display points on the chart.</description>
+        </property>
+
+        <property key="hoverMode" type="enumeration" defaultValue="nearest">
+            <caption>Hover Mode</caption>
+            <category>Interaction</category>
+            <description>Select the hover interaction mode.</description>
+
+            <enumerationValues>
+                <enumerationValue key="nearest">Nearest</enumerationValue>
+                <enumerationValue key="index">Index</enumerationValue>
+                <enumerationValue key="dataset">Dataset</enumerationValue>
+            </enumerationValues>
+
+        </property>
+        <property key="showGrid" type="boolean" defaultValue="true">
+            <caption>Show Grid Lines</caption>
+            <category>Appearance</category>
+            <description>Display chart grid.</description>
+        </property>
+        <property key="legendName" type="string">
+            <caption>Legend Name</caption>
+            <category>Appearance</category>
+            <description>Text displayed in the chart legend.</description>
+        </property>
+        <property key="showLegend" type="boolean" defaultValue="true">
+            <caption>Show Legend</caption>
+            <category>Appearance</category>
+            <description>Display chart legend.</description>
+        </property>
+
+        <property key="legendPosition" type="enumeration" defaultValue="top">
+            <caption>Legend Position</caption>
+            <category>Appearance</category>
+            <description>Select legend position.</description>
+
+            <enumerationValues>
+                <enumerationValue key="top">Top</enumerationValue>
+                <enumerationValue key="bottom">Bottom</enumerationValue>
+                <enumerationValue key="left">Left</enumerationValue>
+                <enumerationValue key="right">Right</enumerationValue>
+            </enumerationValues>
+        </property>
+
+        <property key="theme" type="enumeration" defaultValue="indigo">
+
+            <caption>Chart Theme</caption>
+
+            <category>Theme</category>
+
+            <description>Select a predefined colour palette.</description>
+
+            <enumerationValues>
+
+                <enumerationValue key="indigo">Indigo</enumerationValue>
+
+                <enumerationValue key="azure">Azure</enumerationValue>
+
+                <enumerationValue key="emerald">Emerald</enumerationValue>
+
+                <enumerationValue key="violet">Violet</enumerationValue>
+
+                <enumerationValue key="amber">Amber</enumerationValue>
+
+                <enumerationValue key="rose">Rose</enumerationValue>
+
+                <enumerationValue key="slate">Slate</enumerationValue>
+
+                <enumerationValue key="dark">Dark</enumerationValue>
+
+                <enumerationValue key="custom">Custom</enumerationValue>
+
+            </enumerationValues>
+
+        </property>
+        <!-- COLORS -->
+
+        <property key="lineColor" type="string">
+            <caption>Line Color</caption>
+            <category>Styling</category>
+            <description>Line color</description>
+        </property>
+        <property key="enableAnimation" type="boolean" defaultValue="true">
+            <caption>Enable Entry Animation</caption>
+            <category>Interaction</category>
+            <description>Animate chart on load.</description>
+        </property>
+
+        <property key="animationDuration" type="integer" defaultValue="1200">
+            <caption>Animation Duration (ms)</caption>
+            <category>Interaction</category>
+            <description>Animation duration in milliseconds.</description>
+        </property>
+
+        <property key="tooltipFormat" type="string">
+            <caption>Tooltip Value Format</caption>
+            <category>Interaction</category>
+            <description>Example: {value} or ₹ {value}</description>
+        </property>
+
+        <property key="pointColor" type="string">
+            <caption>Point Color</caption>
+            <category>Styling</category>
+            <description>Point color</description>
+        </property>
+
+        <property key="gridColor" type="string">
+            <caption>Grid Color</caption>
+            <category>Styling</category>
+            <description>Grid color</description>
+        </property>
+
+        <property key="backgroundColor" type="string">
+            <caption>Background Color</caption>
+            <category>Styling</category>
+            <description>Background color</description>
+        </property>
+
+        <!-- OPTIONS -->
+
+        <property key="lineWidth" type="integer" defaultValue="3">
+            <caption>Line Width</caption>
+            <category>Styling</category>
+            <description>Line width</description>
+        </property>
+
+        <property key="pointRadius" type="integer" defaultValue="5">
+            <caption>Point Radius</caption>
+            <category>Styling</category>
+            <description>Point radius</description>
+        </property>
+
+
+        <property key="smoothLine" type="boolean" defaultValue="true">
+            <caption>Smooth Line</caption>
+            <category>Appearance</category>
+            <description>Draw smooth line</description>
+        </property>
+
+
+        <property key="showTooltip" type="boolean" defaultValue="true">
+            <caption>Show Tooltip</caption>
+            <category>Interaction</category>
+            <description>Show tooltip</description>
+        </property>
+        <property key="customClass" type="string">
+            <caption>Custom CSS Class</caption>
+            <category>Styling</category>
+            <description>Optional CSS class applied to the chart container.</description>
+        </property>
+        <property key="fontSize" type="integer" defaultValue="12">
+            <caption>Font Size</caption>
+            <category>Styling</category>
+            <description>Axis, legend and tooltip font size.</description>
+        </property>
+        <property key="gridThickness" type="integer" defaultValue="1">
+            <caption>Grid Thickness</caption>
+            <category>Styling</category>
+            <description>Thickness of chart grid lines.</description>
+        </property>
+        <property key="borderRadius" type="integer" defaultValue="16">
+            <caption>Card Border Radius</caption>
+            <category>Styling</category>
+            <description>Rounded corners of the chart container.</description>
+        </property>
+        <property key="shadow" type="boolean" defaultValue="true">
+            <caption>Show Card Shadow</caption>
+            <category>Styling</category>
+            <description>Display a subtle shadow around the chart.</description>
+        </property>
+        <property key="padding" type="integer" defaultValue="20">
+            <caption>Container Padding</caption>
+            <category>Styling</category>
+            <description>Padding inside the chart container.</description>
+        </property>
+
+        <property key="lineStyle" type="enumeration" defaultValue="solid">
+
+            <caption>Line Style</caption>
+
+            <category>Styling</category>
+
+            <description>Select the line style.</description>
+
+            <enumerationValues>
+
+                <enumerationValue key="solid">Solid</enumerationValue>
+
+                <enumerationValue key="dashed">Dashed</enumerationValue>
+
+                <enumerationValue key="dotted">Dotted</enumerationValue>
+
+            </enumerationValues>
+
+        </property>
+        <property key="pointStyle" type="enumeration" defaultValue="circle">
+
+            <caption>Point Style</caption>
+
+            <category>Styling</category>
+
+            <description>Select the point shape.</description>
+
+            <enumerationValues>
+
+                <enumerationValue key="circle">Circle</enumerationValue>
+
+                <enumerationValue key="rect">Square</enumerationValue>
+
+                <enumerationValue key="triangle">Triangle</enumerationValue>
+
+                <enumerationValue key="star">Star</enumerationValue>
+
+            </enumerationValues>
+
+        </property>
+        <!-- REPORTING -->
+
+        <property key="enableReport" type="boolean" defaultValue="true">
+            <caption>Enable Report</caption>
+            <category>Reporting</category>
+            <description>Enable report generation.</description>
+        </property>
+
+        <property key="reportTitle" type="string">
+            <caption>Report Title</caption>
+            <category>Reporting</category>
+            <description>Title displayed in the generated report.</description>
+        </property>
+
+        <property key="companyName" type="string">
+            <caption>Company Name</caption>
+            <category>Reporting</category>
+            <description>Company name shown in the report.</description>
+        </property>
+
+        <property key="generatedBy" type="string">
+            <caption>Generated By</caption>
+            <category>Reporting</category>
+            <description>Name of the report generator.</description>
+        </property>
+
+        <property key="footerText" type="string">
+            <caption>Footer Text</caption>
+            <category>Reporting</category>
+            <description>Footer displayed in the report.</description>
+        </property>
+
+        <property key="exportButtonText" type="string">
+            <caption>Export Button Text</caption>
+            <category>Reporting</category>
+            <description>Caption shown on the export button.</description>
+        </property>
+
+        <!-- Context Object -->
+
+        <!-- Action -->
+
+        <property key="generateReportAction" type="action">
+            <caption>Generate Report Action</caption>
+            <category>Reporting</category>
+            <description>Microflow executed after the widget stores the report data.</description>
+        </property>
+        <!-- BRANDING -->
+
+        <property key="companyLogo" type="string">
+            <caption>Company Logo Path</caption>
+            <category>Branding</category>
+            <description>
+                Relative path to the company logo.
+                Example: /img/company-logo.png
+            </description>
+        </property>
+
+        <property key="reportTheme" type="enumeration" defaultValue="corporate">
+            <caption>Report Theme</caption>
+            <category>Branding</category>
+            <description>Select the report theme.</description>
+            <enumerationValues>
+                <enumerationValue key="corporate">Corporate Blue</enumerationValue>
+                <enumerationValue key="emerald">Emerald</enumerationValue>
+                <enumerationValue key="purple">Purple</enumerationValue>
+                <enumerationValue key="dark">Dark</enumerationValue>
+                <enumerationValue key="custom">Custom</enumerationValue>
+            </enumerationValues>
+        </property>
+
+        <property key="primaryColor" type="string">
+            <caption>Primary Color</caption>
+            <category>Branding</category>
+            <description>Used when Report Theme is Custom.</description>
+        </property>
+
+        <property key="secondaryColor" type="string">
+            <caption>Secondary Color</caption>
+            <category>Branding</category>
+            <description>Used when Report Theme is Custom.</description>
+        </property>
+
+    </properties>
+
+
+</widget>
