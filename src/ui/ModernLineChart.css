@@ -103,6 +103,8 @@ body.dark-theme .mlc-container {
     width: 100%;
     display: flex;
     flex-direction: column;
+    /* height is set inline per-instance from props.height */
+    box-sizing: border-box;
 }
 
 .mlc-toolbar {
@@ -112,6 +114,7 @@ body.dark-theme .mlc-container {
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 16px;
+    flex-shrink: 0;
 }
 
 .mlc-title {
@@ -216,7 +219,173 @@ body.dark-theme .mlc-container {
 .mlc-chart {
     width: 100%;
     position: relative;
+    overflow: visible; /* was 'hidden' - clipped the tooltip near top/left/right edges */
+    flex: 1 1 auto;
+    min-height: 0; /* required so a flex child can shrink below its content size and take the canvas's height from the parent instead */
+}
+
+/* Custom HTML tooltip (replaces Chart.js's default canvas-drawn tooltip) */
+.mlc-tooltip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, calc(-100% - 14px));
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 20;
+
+    min-width: 160px;
+    max-width: 240px;
+    padding: 10px 12px;
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.mlc-tooltip::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: calc(50% + var(--mlc-tooltip-arrow-offset, 0px));
+    transform: translateX(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: inherit;
+    border-right: 1px solid rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0 0 2px 0;
+}
+
+/* Used when there isn't enough room above the point (top-most values) -
+   flips the card below the point instead of letting it clip the chart top. */
+.mlc-tooltip.mlc-tooltip-flip {
+    transform: translate(-50%, 14px);
+}
+
+.mlc-tooltip.mlc-tooltip-flip::after {
+    bottom: auto;
+    top: -6px;
+    border-right: none;
+    border-bottom: none;
+    border-left: 1px solid rgba(15, 23, 42, 0.08);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 2px 0 0 0;
+}
+
+.mlc-tooltip-dark.mlc-tooltip-flip::after {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mlc-tooltip-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 6px;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.3;
+}
+
+.mlc-tooltip-body {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.mlc-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+.mlc-tooltip-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.mlc-tooltip-label {
+    color: #64748B;
+    flex: 1 1 auto;
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mlc-tooltip-value {
+    font-weight: 700;
+    color: #0F172A;
+    white-space: nowrap;
+}
+
+.mlc-tooltip-trend {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.mlc-tooltip-trend-up {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.mlc-tooltip-trend-down {
+    color: #DC2626;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.mlc-tooltip-trend-flat {
+    color: #64748B;
+    background: rgba(100, 116, 139, 0.12);
+}
+
+/* Dark theme variant */
+.mlc-tooltip-dark {
+    background: rgba(15, 23, 42, 0.92);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.mlc-tooltip-dark::after {
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mlc-tooltip-dark .mlc-tooltip-title {
+    color: #F8FAFC;
+}
+
+.mlc-tooltip-dark .mlc-tooltip-label {
+    color: #94A3B8;
+}
+
+.mlc-tooltip-dark .mlc-tooltip-value {
+    color: #F8FAFC;
+}
+
+.mlc-tooltip-dark .mlc-tooltip-trend-up {
+    color: #34D399;
+    background: rgba(52, 211, 153, 0.16);
+}
+
+.mlc-tooltip-dark .mlc-tooltip-trend-down {
+    color: #F87171;
+    background: rgba(248, 113, 113, 0.16);
+}
+
+.mlc-tooltip-dark .mlc-tooltip-trend-flat {
+    color: #94A3B8;
+    background: rgba(148, 163, 184, 0.16);
 }
 /* Drill-down modal - shown when a chart point is clicked, mirrors ModernPieChart slice-click modal */
 .mlc-modal-overlay {
@@ -484,10 +653,6 @@ body.dark-theme .mlc-container {
 }
 
 @media (max-width: 480px) {
-    .mlc-chart {
-        max-height: 260px;
-    }
-
     .modern-line-chart {
         padding: 16px;
     }

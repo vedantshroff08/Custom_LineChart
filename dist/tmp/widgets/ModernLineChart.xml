@@ -19,24 +19,51 @@
             <caption>X Axis</caption>
             <category>Data</category>
             <description>X Axis attribute</description>
-
             <attributeTypes>
                 <attributeType name="String" />
             </attributeTypes>
-
         </property>
 
-        <property key="yAttribute" type="attribute" dataSource="dataSource" required="true">
-            <caption>Y Axis</caption>
+        <property key="yAttribute" type="attribute" dataSource="dataSource" required="false">
+            <caption>Y Axis (Legacy)</caption>
             <category>Data</category>
-            <description>Y Axis attribute</description>
-
+            <description>Single-series Y attribute. Use Series for multi-series charts.</description>
             <attributeTypes>
                 <attributeType name="Integer" />
                 <attributeType name="Long" />
                 <attributeType name="Decimal" />
             </attributeTypes>
+        </property>
 
+        <property key="series" type="object" isList="true" required="false">
+            <caption>Series</caption>
+            <category>Data</category>
+            <description>Add one or more numeric series.</description>
+            <properties>
+                <propertyGroup caption="Series Configuration">
+
+                    <property key="name" type="string" required="true">
+                        <caption>Series Name</caption>
+                        <description>Name shown in the legend and tooltip.</description>
+                    </property>
+
+                    <property key="attribute" type="attribute" dataSource="../dataSource" required="true">
+                        <caption>Y Attribute</caption>
+                        <description>Numeric attribute used for this series.</description>
+                        <attributeTypes>
+                            <attributeType name="Integer" />
+                            <attributeType name="Long" />
+                            <attributeType name="Decimal" />
+                        </attributeTypes>
+                    </property>
+
+                    <property key="color" type="string" required="false">
+                        <caption>Series Color</caption>
+                        <description>Optional line color.</description>
+                    </property>
+
+                </propertyGroup>
+            </properties>
         </property>
 
         <property key="jsonAttr" type="attribute" dataSource="dataSource" required="false">
@@ -86,28 +113,18 @@
             <description>Display points on the chart.</description>
         </property>
 
-        <property key="hoverMode" type="enumeration" defaultValue="nearest">
-            <caption>Hover Mode</caption>
-            <category>Interaction</category>
-            <description>Select the hover interaction mode.</description>
-
-            <enumerationValues>
-                <enumerationValue key="nearest">Nearest</enumerationValue>
-                <enumerationValue key="index">Index</enumerationValue>
-                <enumerationValue key="dataset">Dataset</enumerationValue>
-            </enumerationValues>
-
-        </property>
         <property key="showGrid" type="boolean" defaultValue="true">
             <caption>Show Grid Lines</caption>
             <category>Appearance</category>
             <description>Display chart grid.</description>
         </property>
+
         <property key="legendName" type="string">
             <caption>Legend Name</caption>
             <category>Appearance</category>
             <description>Text displayed in the chart legend.</description>
         </property>
+
         <property key="showLegend" type="boolean" defaultValue="true">
             <caption>Show Legend</caption>
             <category>Appearance</category>
@@ -118,7 +135,6 @@
             <caption>Legend Position</caption>
             <category>Appearance</category>
             <description>Select legend position.</description>
-
             <enumerationValues>
                 <enumerationValue key="top">Top</enumerationValue>
                 <enumerationValue key="bottom">Bottom</enumerationValue>
@@ -127,44 +143,44 @@
             </enumerationValues>
         </property>
 
+        <property key="smoothLine" type="boolean" defaultValue="true">
+            <caption>Smooth Line</caption>
+            <category>Appearance</category>
+            <description>Draw smooth line</description>
+        </property>
+
+        <!-- THEME -->
+
         <property key="theme" type="enumeration" defaultValue="indigo">
-
             <caption>Chart Theme</caption>
-
             <category>Theme</category>
-
             <description>Select a predefined colour palette.</description>
-
             <enumerationValues>
-
                 <enumerationValue key="indigo">Indigo</enumerationValue>
-
                 <enumerationValue key="azure">Azure</enumerationValue>
-
                 <enumerationValue key="emerald">Emerald</enumerationValue>
-
                 <enumerationValue key="violet">Violet</enumerationValue>
-
                 <enumerationValue key="amber">Amber</enumerationValue>
-
                 <enumerationValue key="rose">Rose</enumerationValue>
-
                 <enumerationValue key="slate">Slate</enumerationValue>
-
                 <enumerationValue key="dark">Dark</enumerationValue>
-
                 <enumerationValue key="custom">Custom</enumerationValue>
-
             </enumerationValues>
-
         </property>
-        <!-- COLORS -->
 
-        <property key="lineColor" type="string">
-            <caption>Line Color</caption>
-            <category>Styling</category>
-            <description>Line color</description>
+        <!-- INTERACTION -->
+
+        <property key="hoverMode" type="enumeration" defaultValue="nearest">
+            <caption>Hover Mode</caption>
+            <category>Interaction</category>
+            <description>Select the hover interaction mode.</description>
+            <enumerationValues>
+                <enumerationValue key="nearest">Nearest</enumerationValue>
+                <enumerationValue key="index">Index</enumerationValue>
+                <enumerationValue key="dataset">Dataset</enumerationValue>
+            </enumerationValues>
         </property>
+
         <property key="enableAnimation" type="boolean" defaultValue="true">
             <caption>Enable Entry Animation</caption>
             <category>Interaction</category>
@@ -181,6 +197,20 @@
             <caption>Tooltip Value Format</caption>
             <category>Interaction</category>
             <description>Example: {value} or ₹ {value}</description>
+        </property>
+
+        <property key="showTooltip" type="boolean" defaultValue="true">
+            <caption>Show Tooltip</caption>
+            <category>Interaction</category>
+            <description>Show tooltip</description>
+        </property>
+
+        <!-- STYLING -->
+
+        <property key="lineColor" type="string">
+            <caption>Line Color</caption>
+            <category>Styling</category>
+            <description>Line color</description>
         </property>
 
         <property key="pointColor" type="string">
@@ -201,8 +231,6 @@
             <description>Background color</description>
         </property>
 
-        <!-- OPTIONS -->
-
         <property key="lineWidth" type="integer" defaultValue="3">
             <caption>Line Width</caption>
             <category>Styling</category>
@@ -215,44 +243,36 @@
             <description>Point radius</description>
         </property>
 
-
-        <property key="smoothLine" type="boolean" defaultValue="true">
-            <caption>Smooth Line</caption>
-            <category>Appearance</category>
-            <description>Draw smooth line</description>
-        </property>
-
-
-        <property key="showTooltip" type="boolean" defaultValue="true">
-            <caption>Show Tooltip</caption>
-            <category>Interaction</category>
-            <description>Show tooltip</description>
-        </property>
-        <property key="customClass" type="string">
+        <property key="customClass" type="string" required="false">
             <caption>Custom CSS Class</caption>
             <category>Styling</category>
             <description>Optional CSS class applied to the chart container.</description>
         </property>
+
         <property key="fontSize" type="integer" defaultValue="12">
             <caption>Font Size</caption>
             <category>Styling</category>
             <description>Axis, legend and tooltip font size.</description>
         </property>
+
         <property key="gridThickness" type="integer" defaultValue="1">
             <caption>Grid Thickness</caption>
             <category>Styling</category>
             <description>Thickness of chart grid lines.</description>
         </property>
+
         <property key="borderRadius" type="integer" defaultValue="16">
             <caption>Card Border Radius</caption>
             <category>Styling</category>
             <description>Rounded corners of the chart container.</description>
         </property>
+
         <property key="shadow" type="boolean" defaultValue="true">
             <caption>Show Card Shadow</caption>
             <category>Styling</category>
             <description>Display a subtle shadow around the chart.</description>
         </property>
+
         <property key="padding" type="integer" defaultValue="20">
             <caption>Container Padding</caption>
             <category>Styling</category>
@@ -260,45 +280,28 @@
         </property>
 
         <property key="lineStyle" type="enumeration" defaultValue="solid">
-
             <caption>Line Style</caption>
-
             <category>Styling</category>
-
             <description>Select the line style.</description>
-
             <enumerationValues>
-
                 <enumerationValue key="solid">Solid</enumerationValue>
-
                 <enumerationValue key="dashed">Dashed</enumerationValue>
-
                 <enumerationValue key="dotted">Dotted</enumerationValue>
-
             </enumerationValues>
-
         </property>
+
         <property key="pointStyle" type="enumeration" defaultValue="circle">
-
             <caption>Point Style</caption>
-
             <category>Styling</category>
-
             <description>Select the point shape.</description>
-
             <enumerationValues>
-
                 <enumerationValue key="circle">Circle</enumerationValue>
-
                 <enumerationValue key="rect">Square</enumerationValue>
-
                 <enumerationValue key="triangle">Triangle</enumerationValue>
-
                 <enumerationValue key="star">Star</enumerationValue>
-
             </enumerationValues>
-
         </property>
+
         <!-- REPORTING -->
 
         <property key="enableReport" type="boolean" defaultValue="true">
@@ -337,24 +340,18 @@
             <description>Caption shown on the export button.</description>
         </property>
 
-        <!-- Context Object -->
-
-        <!-- Action -->
-
         <property key="generateReportAction" type="action">
             <caption>Generate Report Action</caption>
             <category>Reporting</category>
             <description>Microflow executed after the widget stores the report data.</description>
         </property>
+
         <!-- BRANDING -->
 
         <property key="companyLogo" type="string">
             <caption>Company Logo Path</caption>
             <category>Branding</category>
-            <description>
-                Relative path to the company logo.
-                Example: /img/company-logo.png
-            </description>
+            <description>Relative path to the company logo. Example: /img/company-logo.png</description>
         </property>
 
         <property key="reportTheme" type="enumeration" defaultValue="corporate">
@@ -383,6 +380,5 @@
         </property>
 
     </properties>
-
 
 </widget>

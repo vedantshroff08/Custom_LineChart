@@ -4,6 +4,7 @@ import { buildReport } from "../report/ReportEngine";
 import { exportChartImage } from "../report/ChartExporter";
 import { generatePdfReport, downloadPdf } from "../report/PdfExporter";
 import { ChartPoint } from "../models/ChartPoint";
+import { ChartSeriesData } from "../utils/ChartData";
 import { shadeColor, hexToRgba } from "../utils/color";
 import { DrillDownModal } from "./DrillDownModal";
 
@@ -34,6 +35,24 @@ function wrapTooltipText(text: string, maxCharsPerLine: number = 26, maxLines: n
     return lines;
 }
 
+function formatTooltipValue(rawValue: number | string, format?: string): string {
+    const formattedNumber =
+        typeof rawValue === "number" ? rawValue.toLocaleString() : String(rawValue);
+
+    if (!format || !format.trim()) {
+        return formattedNumber;
+    }
+
+    // Replace the {value} token with the formatted number.
+    // If the user's format string doesn't include {value} at all,
+    // fall back to just the plain number so nothing silently disappears.
+    if (!format.includes("{value}")) {
+        return formattedNumber;
+    }
+
+    return format.replace("{value}", formattedNumber);
+}
+
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -61,6 +80,7 @@ export interface LineChartProps {
     chartTitle?: string;
     labels: string[];
     values: number[];
+    series: ChartSeriesData[];
     height: number;
     legendName: string;
     lineColor: string;
@@ -83,6 +103,7 @@ export interface LineChartProps {
     enableAnimation: boolean;
     animationDuration: number;
     hoverMode: "nearest" | "index" | "dataset";
+    tooltipFormat?: string;
     enableReport: boolean;
     reportTitle: string;
     companyName: string;
@@ -101,6 +122,7 @@ export function LineChart(props: LineChartProps): ReactElement {
 
     const chartRef = useRef<ChartJS<"line"> | null>(null);
     const chartWrapRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
     const [isDarkTheme, setIsDarkTheme] = useState(
         document.body.classList.contains("dark-theme")
     );
@@ -108,11 +130,22 @@ export function LineChart(props: LineChartProps): ReactElement {
     const [selectedPoint, setSelectedPoint] = useState<ChartPoint | null>(null);
     const [showModal, setShowModal] = useState(false);
 
-    const exportBtnGradient = `linear-gradient(135deg, ${props.lineColor} 0%, ${shadeColor(props.lineColor, -18)} 100%)`;
-    const exportBtnShadow = hexToRgba(props.lineColor, 0.28);
-    const exportBtnShadowHover = hexToRgba(props.lineColor, 0.38);
-
     const filtered = { labels: props.labels, values: props.values };
+    const chartSeries = props.series?.length
+        ? props.series
+        : [{
+            label: props.legendName && props.legendName.trim().length > 0 ? props.legendName : "Series",
+            values: props.values,
+            color: props.lineColor
+        }];
+
+    const allSeriesValues = chartSeries.flatMap(series => series.values);
+    const primarySeriesColor = chartSeries[0]?.color || props.lineColor;
+
+    const exportBtnGradient = `linear-gradient(135deg, ${primarySeriesColor} 0%, ${shadeColor(primarySeriesColor, -18)} 100%)`;
+    const exportBtnShadow = hexToRgba(primarySeriesColor, 0.28);
+    const exportBtnShadowHover = hexToRgba(primarySeriesColor, 0.38);
+
     useEffect(() => {
 
         const observer = new MutationObserver(() => {
@@ -143,6 +176,98 @@ export function LineChart(props: LineChartProps): ReactElement {
         observer.observe(container);
         return () => observer.disconnect();
     }, []);
+
+    // Renders a modern, theme-aware HTML tooltip card instead of Chart.js's
+    // default canvas-drawn tooltip. Chart.js still computes position/data via
+    // its internal tooltip model (see `interaction`/`tooltip.mode` in options);
+    // this handler only takes over the rendering + DOM positioning.
+    const externalTooltipHandler = (context: any) => {
+        const { chart, tooltip } = context;
+        const tooltipEl = tooltipRef.current;
+        if (!tooltipEl) {
+            return;
+        }
+
+        if (tooltip.opacity === 0) {
+            tooltipEl.style.opacity = "0";
+            tooltipEl.style.pointerEvents = "none";
+            return;
+        }
+
+        const dataPoints = tooltip.dataPoints || [];
+        const titleRaw = (tooltip.title && tooltip.title[0]) || "";
+        const titleLines = wrapTooltipText(String(titleRaw), 26, 2);
+
+        let rowsHtml = "";
+        dataPoints.forEach((dp: any) => {
+            const color = dp.dataset.borderColor as string;
+            const seriesLabel = dp.dataset.label || "Series";
+            const formattedValue = formatTooltipValue(dp.parsed.y, props.tooltipFormat);
+
+            // Trend vs. the previous point in the same series, when available.
+            const idx = dp.dataIndex;
+            const seriesData = dp.dataset.data as number[];
+            let trendHtml = "";
+            if (idx > 0 && typeof seriesData[idx] === "number" && typeof seriesData[idx - 1] === "number") {
+                const diff = seriesData[idx] - seriesData[idx - 1];
+                if (diff > 0) {
+                    trendHtml = `<span class="mlc-tooltip-trend mlc-tooltip-trend-up">▲ ${diff.toLocaleString()}</span>`;
+                } else if (diff < 0) {
+                    trendHtml = `<span class="mlc-tooltip-trend mlc-tooltip-trend-down">▼ ${Math.abs(diff).toLocaleString()}</span>`;
+                } else {
+                    trendHtml = `<span class="mlc-tooltip-trend mlc-tooltip-trend-flat">— 0</span>`;
+                }
+            }
+
+            rowsHtml += `
+                <div class="mlc-tooltip-row">
+                    <span class="mlc-tooltip-dot" style="background:${color}"></span>
+                    <span class="mlc-tooltip-label">${seriesLabel}</span>
+                    <span class="mlc-tooltip-value">${formattedValue}</span>
+                    ${trendHtml}
+                </div>`;
+        });
+
+        tooltipEl.innerHTML = `
+            <div class="mlc-tooltip-title">${titleLines.join("<br/>")}</div>
+            <div class="mlc-tooltip-body">${rowsHtml}</div>
+        `;
+
+        const { offsetLeft, offsetTop } = chart.canvas;
+        tooltipEl.style.opacity = "1";
+        tooltipEl.style.pointerEvents = "none";
+
+        // Reset before measuring so offsetWidth/offsetHeight reflect the new content.
+        tooltipEl.style.left = offsetLeft + tooltip.caretX + "px";
+        tooltipEl.style.top = offsetTop + tooltip.caretY + "px";
+        tooltipEl.classList.remove("mlc-tooltip-flip");
+
+        const tooltipWidth = tooltipEl.offsetWidth;
+        const tooltipHeight = tooltipEl.offsetHeight;
+        const edgePadding = 8;
+
+        // Clamp horizontally so the card never spills past the chart's left/right
+        // edge (this is what was happening at the first/last data points, since
+        // the card is centered on the point by default).
+        const desiredLeft = offsetLeft + tooltip.caretX;
+        const minLeft = offsetLeft + tooltipWidth / 2 + edgePadding;
+        const maxLeft = offsetLeft + chart.width - tooltipWidth / 2 - edgePadding;
+        const clampedLeft = Math.min(Math.max(desiredLeft, minLeft), maxLeft);
+        const arrowOffset = desiredLeft - clampedLeft;
+
+        // Flip below the point when there isn't enough room above it (top-most
+        // points), instead of letting the card get cut off at the chart's top edge.
+        const desiredTop = offsetTop + tooltip.caretY;
+        const spaceAbove = desiredTop - offsetTop;
+        const flip = spaceAbove < tooltipHeight + 20;
+        if (flip) {
+            tooltipEl.classList.add("mlc-tooltip-flip");
+        }
+
+        tooltipEl.style.left = clampedLeft + "px";
+        tooltipEl.style.top = desiredTop + "px";
+        tooltipEl.style.setProperty("--mlc-tooltip-arrow-offset", `${arrowOffset}px`);
+    };
 
     const buildReportOptions = () => ({
         title: props.reportTitle || "Line Chart Report",
@@ -183,34 +308,24 @@ export function LineChart(props: LineChartProps): ReactElement {
     };
 
     const maxValue =
-        filtered.values.length > 0
-            ? Math.max(...filtered.values)
+        allSeriesValues.length > 0
+            ? Math.max(...allSeriesValues)
             : 0;
-
 
     const data: ChartData<"line"> = useMemo(
         () => ({
-
-
             labels: filtered.labels,
-            datasets: [
-                {
+            datasets: chartSeries.map((series, seriesIndex) => {
+                const seriesColor = series.color || props.lineColor;
+
+                return {
                     clip: 10,
-
                     borderCapStyle: "round",
-
                     borderJoinStyle: "round",
-
-                    label:
-                        props.legendName && props.legendName.trim().length > 0
-                            ? props.legendName
-                            : "Series",
-
+                    label: series.label || `Series ${seriesIndex + 1}`,
                     cubicInterpolationMode: "monotone",
-
-                    data: filtered.values,
-                    borderColor: props.lineColor,
-
+                    data: series.values,
+                    borderColor: seriesColor,
                     borderWidth: props.lineWidth,
                     borderDash:
                         props.lineStyle === "dashed"
@@ -218,42 +333,24 @@ export function LineChart(props: LineChartProps): ReactElement {
                             : props.lineStyle === "dotted"
                                 ? [2, 4]
                                 : [],
-
                     fill: props.fillArea,
-
-                    pointRadius: props.showPoints
-                        ? props.pointRadius
-                        : 0,
-
+                    pointRadius: props.showPoints ? props.pointRadius : 0,
                     pointHoverBorderWidth: 3,
                     pointHoverBackgroundColor: props.pointColor,
-                    pointHoverBorderColor: props.lineColor,
-
-                    pointHoverRadius: props.showPoints
-                        ? props.pointRadius + 3
-                        : 0,
+                    pointHoverBorderColor: seriesColor,
+                    pointHoverRadius: props.showPoints ? props.pointRadius + 3 : 0,
                     pointStyle: props.pointStyle,
-
                     pointHitRadius: 20,
-
                     pointBackgroundColor: props.pointColor,
-
-                    pointBorderColor: props.lineColor,
-
+                    pointBorderColor: seriesColor,
                     pointBorderWidth: 2,
-
                     tension: props.smoothLine ? 0.4 : 0,
-
-
-
                     backgroundColor: context => {
-
                         const chart = context.chart;
-
                         const { ctx, chartArea } = chart;
 
                         if (!chartArea) {
-                            return props.lineColor + "22";
+                            return seriesColor + "22";
                         }
 
                         const gradient = ctx.createLinearGradient(
@@ -263,19 +360,16 @@ export function LineChart(props: LineChartProps): ReactElement {
                             chartArea.bottom
                         );
 
-                        gradient.addColorStop(0, props.lineColor + "55");
-
-                        gradient.addColorStop(.6, props.lineColor + "22");
-
-                        gradient.addColorStop(1, props.lineColor + "00");
+                        gradient.addColorStop(0, seriesColor + "55");
+                        gradient.addColorStop(0.6, seriesColor + "22");
+                        gradient.addColorStop(1, seriesColor + "00");
 
                         return gradient;
-
                     }
-
-                }]
+                };
+            })
         }),
-        [props, filtered]
+        [chartSeries, filtered.labels, props]
     );
 
     const handlePointClick = (
@@ -352,66 +446,8 @@ export function LineChart(props: LineChartProps): ReactElement {
 
             },
             tooltip: {
-                enabled: props.showTooltip,
-
-                backgroundColor: isDarkTheme
-                    ? "rgba(15,23,42,0.95)"
-                    : "rgba(17,24,39,0.95)",
-
-                titleColor: isDarkTheme
-                    ? "#F8FAFC"
-                    : "#F9FAFB",
-
-                bodyColor: isDarkTheme
-                    ? "#CBD5E1"
-                    : "#E5E7EB",
-
-                displayColors: true, // show the color swatch per dataset - adds visual interest
-                boxWidth: 8,
-                boxHeight: 8,
-                boxPadding: 6,
-                usePointStyle: true, // renders swatch as a circle instead of a square
-
-                borderColor: "rgba(99, 102, 241, 0.4)", // subtle indigo accent border
-                borderWidth: 1,
-
-                cornerRadius: 12,
-                padding: 12,
-                caretSize: 8,
-                caretPadding: 8,
-
-                titleFont: {
-                    size: (props.fontSize || 12) + 1,
-                    weight: "bold",
-                    family: "'Inter', sans-serif",
-                    lineHeight: 1.3
-                },
-
-                bodyFont: {
-                    size: props.fontSize || 12,
-                    family: "'Inter', sans-serif"
-                },
-
-                // Adds spacing/hierarchy between title and body
-                titleMarginBottom: 8,
-                bodySpacing: 6,
-
-                callbacks: {
-                    // Wraps long labels into stacked lines instead of one overflowing line
-                    title: function (items: any[]) {
-                        if (!items.length) return [];
-                        const raw = items[0].label ?? "";
-                        return wrapTooltipText(String(raw), 26);
-                    },
-                    // Bold value formatting with unit, e.g. "1,234 units"
-                    label: function (context: any) {
-                        const label = context.dataset.label || '';
-                        const value = typeof context.parsed.y === 'number'
-                            ? context.parsed.y.toLocaleString()
-                            : context.parsed.y;
-                        return ` ${label}: ${value}`;
-                    }
-                },
+                enabled: false,
+                external: props.showTooltip ? externalTooltipHandler : undefined
             }
         },
         scales: {
@@ -460,8 +496,8 @@ export function LineChart(props: LineChartProps): ReactElement {
                 beginAtZero: true,
 
                 suggestedMax:
-                    Math.ceil(maxValue / calculateStep(filtered.values)) *
-                    calculateStep(filtered.values),
+                    Math.ceil(maxValue / calculateStep(allSeriesValues)) *
+                    calculateStep(allSeriesValues),
                 grid: {
                     display: props.showGrid,
 
@@ -478,7 +514,7 @@ export function LineChart(props: LineChartProps): ReactElement {
 
                     precision: 0,
 
-                    stepSize: calculateStep(filtered.values),
+                    stepSize: calculateStep(allSeriesValues),
 
                     color: isDarkTheme ? "#CBD5E1" : "#64748B",
 
@@ -500,7 +536,7 @@ export function LineChart(props: LineChartProps): ReactElement {
     };
 
     return (
-        <div className="mlc-card">
+        <div className="mlc-card" style={{ height: `${props.height}px` }}>
             {(props.chartTitle || props.enableReport) && (
                 <div className="mlc-toolbar">
                     {props.chartTitle && (
@@ -536,8 +572,12 @@ export function LineChart(props: LineChartProps): ReactElement {
                 </div>
             )}
 
-            <div className="mlc-chart" ref={chartWrapRef} style={{ height: `${props.height}px` }}>
+            <div className="mlc-chart" ref={chartWrapRef}>
                 <Line ref={chartRef} data={data} options={options} />
+                <div
+                    ref={tooltipRef}
+                    className={`mlc-tooltip${isDarkTheme ? " mlc-tooltip-dark" : ""}`}
+                />
             </div>
 
             <DrillDownModal

@@ -27,7 +27,8 @@ export function ModernLineChart(props: ModernLineChartContainerProps): ReactElem
         props.dataSource,
         props.xAttribute,
         props.yAttribute,
-        props.jsonAttr
+        props.jsonAttr,
+        props.series
     );
 
     if (chartData.values.length === 0) {
@@ -59,7 +60,7 @@ export function ModernLineChart(props: ModernLineChartContainerProps): ReactElem
     }
     return (
         <div
-            className={`mlc-container ${props.customClass ?? ""}`}
+            className={["mlc-container", props.customClass].filter(Boolean).join(" ")}
             style={{
                 borderRadius: props.borderRadius || 20,
                 padding: props.padding || 20,
@@ -75,6 +76,7 @@ export function ModernLineChart(props: ModernLineChartContainerProps): ReactElem
                     enableAnimation={props.enableAnimation}
                     animationDuration={props.animationDuration}
                     hoverMode={props.hoverMode}
+                    tooltipFormat={props.tooltipFormat}
                     gridThickness={props.gridThickness}
                     pointStyle={props.pointStyle}
                     lineStyle={props.lineStyle}
@@ -84,6 +86,7 @@ export function ModernLineChart(props: ModernLineChartContainerProps): ReactElem
                     labels={chartData.labels}
                     backgroundColor={backgroundColor}
                     values={chartData.values}
+                    series={chartData.series}
                     lineColor={lineColor}
                     pointColor={pointColor}
                     gridColor={gridColor}
